@@ -8,8 +8,7 @@ import {
   SafetyCertificateOutlined,
   StockOutlined,
   SettingOutlined,
-  CodeOutlined,
-  GithubOutlined
+  CodeOutlined
 } from '@ant-design/icons';
 
 const { Header, Content, Footer, Sider } = Layout;
