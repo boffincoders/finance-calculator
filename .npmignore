@@ -1,0 +1,11 @@
+# Ignore source files, configuration, and examples.
+# We only want to publish the compiled /dist folder, package.json, and README.md
+src/
+example.ts
+tsup.config.ts
+tsconfig.json
+.eslintrc.*
+.prettierrc.*
+logs/
+.DS_Store
+.github/
