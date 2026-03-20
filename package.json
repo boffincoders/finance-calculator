@@ -2,6 +2,15 @@
 {
   "name": "finance-calculator-pro",
   "version": "1.0.0",
+  "author": "boffincoders",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/boffincoders/finance-calculator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/boffincoders/finance-calculator/issues"
+  },
+  "homepage": "https://github.com/boffincoders/finance-calculator#readme",
   "description": "A zero-dependency financial engine transforming raw snapshot and timeseries data into precise valuation, profitability, liquidity, and risk metrics.",
   "keywords": [
     "finance",
