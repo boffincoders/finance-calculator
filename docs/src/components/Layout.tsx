@@ -98,6 +98,13 @@ const AppLayout: React.FC = () => {
         theme="light"
         width={260}
         className="border-r border-gray-200"
+        style={{
+          overflow: 'auto',
+          height: '100vh',
+          position: 'sticky',
+          top: 0,
+          left: 0,
+        }}
       >
         <div className="h-16 flex items-center justify-center border-b border-gray-200 bg-white">
           <h1 className="text-lg font-bold m-0 text-blue-600">
