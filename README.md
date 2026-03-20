@@ -2,7 +2,7 @@
 
 [![NPM Version](https://img.shields.io/npm/v/finance-calculator-pro.svg)](https://www.npmjs.com/package/finance-calculator-pro)
 
-![finance-calculator-pro banner](https://raw.githubusercontent.com/boffincoders/finance-calculator/main/.github/assets/finance-calculator-pro.png)
+![finance-calculator-pro banner](https://raw.githubusercontent.com/boffincoders/finance-calculator/refs/heads/master/.github/assets/finance-calculator-pro.png)
 
 A highly modular, fully independent fundamental financial calculation engine. Whether you're building a stock screener or tracking your portfolio, this library calculates the metrics tracking a company's valuation, profitability, liquidity, efficiency, and risk flawlessly.
 
