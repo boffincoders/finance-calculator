@@ -1,6 +1,7 @@
 # Ignore source files, configuration, and examples.
 # We only want to publish the compiled /dist folder, package.json, and README.md
 src/
+docs/
 example.ts
 tsup.config.ts
 tsconfig.json

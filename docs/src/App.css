@@ -1,0 +1,25 @@
+/* GitHub Ribbon CSS */
+.github-ribbon {
+  position: fixed;
+  right: -50px;
+  top: 40px;
+  transform: rotate(45deg);
+  background-color: #24292e;
+  color: #ffffff;
+  padding: 5px 50px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+  z-index: 9999;
+  font-family: system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.5px;
+  border-top: 1px dashed rgba(255,255,255,0.4);
+  border-bottom: 1px dashed rgba(255,255,255,0.4);
+  transition: all 0.2s ease;
+}
+
+.github-ribbon:hover {
+  background-color: #0366d6;
+  color: #ffffff;
+}

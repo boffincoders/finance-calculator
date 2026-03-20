@@ -9,7 +9,7 @@
   "bugs": {
     "url": "https://github.com/boffincoders/finance-calculator/issues"
   },
-  "homepage": "https://github.com/boffincoders/finance-calculator#readme",
+  "homepage": "https://boffincoders.github.io/finance-calculator/",
   "description": "A zero-dependency financial engine transforming raw snapshot and timeseries data into precise valuation, profitability, liquidity, and risk metrics.",
   "keywords": [
     "finance",

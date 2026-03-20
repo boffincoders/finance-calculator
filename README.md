@@ -1,6 +1,7 @@
 # finance-calculator-pro
 
 [![NPM Version](https://img.shields.io/npm/v/finance-calculator-pro.svg)](https://www.npmjs.com/package/finance-calculator-pro)
+📖 **[View the Official Documentation](https://boffincoders.github.io/finance-calculator/)**
 
 ![finance-calculator-pro banner](https://raw.githubusercontent.com/boffincoders/finance-calculator/refs/heads/master/.github/assets/finance-calculator-pro.png)
 
@@ -13,6 +14,15 @@ It accepts raw numeric data—no dependency on heavy financial APIs. It pairs am
 ```bash
 npm install finance-calculator-pro
 ```
+
+---
+
+## 🏢 Enterprise Support & FinTech Development
+
+**finance-calculator-pro** is engineered and maintained by **Boffin Coders**, a premier software development agency specializing in FinTech, custom dashboards, and enterprise-grade software solutions.
+
+Are you building a stock screener, a neo-bank, or an internal financial tool? We can help you accelerate development. 
+👉 **[Let's talk about your next project!](https://boffincoders.com)** (Link to your website here)
 
 ---
 
