@@ -1,7 +1,7 @@
 
 {
-  "name": "finance-calculator",
-  "version": "1.0.1",
+  "name": "finance-calculator-pro",
+  "version": "1.0.0",
   "description": "A zero-dependency financial engine transforming raw snapshot and timeseries data into precise valuation, profitability, liquidity, and risk metrics.",
   "keywords": [
     "finance",
