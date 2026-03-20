@@ -1,4 +1,4 @@
-# @boffin-coders/finance-calculator
+# finance-calculator
 
 A highly modular, fully independent fundamental financial calculation engine. Whether you're building a stock screener or tracking your portfolio, this library calculates the metrics tracking a company's valuation, profitability, liquidity, efficiency, and risk flawlessly.
 
@@ -7,7 +7,7 @@ It accepts raw numeric data—no dependency on heavy financial APIs. It pairs am
 ## Installation
 
 ```bash
-npm install @boffin-coders/finance-calculator
+npm install finance-calculator
 ```
 
 ---
@@ -118,7 +118,7 @@ interface FundamentalTimeseriesInput {
 Pass your raw snapshot of a company, and let the engine derive everything at once. Setting `withInsights = true` will automatically translate numbers into human-readable recommendations ("Good", "Bad", "Neutral").
 
 ```typescript
-import { analyzeCompany } from '@boffin-coders/finance-calculator';
+import { analyzeCompany } from 'finance-calculator';
 
 // You ONLY need to provide the fields you care about!
 const rawData = {
@@ -170,7 +170,7 @@ Available Categorical Analyzers:
 - `analyzeRisk(data, withInsights?)`
 
 ```typescript
-import { analyzeProfitability } from '@boffin-coders/finance-calculator';
+import { analyzeProfitability } from 'finance-calculator';
 
 const profitabilityMetrics = analyzeProfitability(rawData, true);
 console.log(profitabilityMetrics.roe.insight); // "Strong return on shareholder equity."
@@ -180,7 +180,7 @@ console.log(profitabilityMetrics.roe.insight); // "Strong return on shareholder 
 If you only need to calculate and evaluate a **single metric** (like P/E), you can combine the pure math modules directly with the `evaluate` engine to get insights without building a full company snapshot!
 
 ```typescript
-import { pe, evaluate } from '@boffin-coders/finance-calculator';
+import { pe, evaluate } from 'finance-calculator';
 
 // 1. Calculate the raw numerical value
 const ratio = pe(150 /* price */, 5 /* eps */); // -> 30
@@ -202,7 +202,7 @@ console.log(JSON.stringify(insight, null, 2));
 Evaluate hundreds of companies seamlessly in a single line.
 
 ```typescript
-import { analyzeBatch } from '@boffin-coders/finance-calculator';
+import { analyzeBatch } from 'finance-calculator';
 
 const multipleCompanies = [ company1, company2, company3 ];
 const batchResults = analyzeBatch(multipleCompanies, true);
@@ -212,7 +212,7 @@ const batchResults = analyzeBatch(multipleCompanies, true);
 Pass arrays of data (oldest to newest) to get automated sequential growth rates and historical margins over time.
 
 ```typescript
-import { analyzeFundamentalTrends } from '@boffin-coders/finance-calculator';
+import { analyzeFundamentalTrends } from 'finance-calculator';
 
 const timeseriesData = {
   revenue: [40000, 45000, 50000],
@@ -246,7 +246,7 @@ Every function returns a `number | null` (returning `null` implicitly if any div
 
 #### Valuation
 ```typescript
-import { pe, pb, ps, peg, evEbitda, calculateEnterpriseValue, dividendYield, calculateDCF } from '@boffin-coders/finance-calculator';
+import { pe, pb, ps, peg, evEbitda, calculateEnterpriseValue, dividendYield, calculateDCF } from 'finance-calculator';
 
 pe(150 /* price */, 5 /* eps */); // -> 30
 pb(150 /* price */, 20 /* bookValuePerShare */); // -> 7.5
@@ -266,7 +266,7 @@ calculateDCF(
 
 #### Profitability
 ```typescript
-import { roa, roe, roic, grossMargin, operatingMargin, netProfitMargin, fcfMargin } from '@boffin-coders/finance-calculator';
+import { roa, roe, roic, grossMargin, operatingMargin, netProfitMargin, fcfMargin } from 'finance-calculator';
 
 roa(5000 /* netIncome */, 100000 /* totalAssets */); // -> 0.05
 roe(5000 /* netIncome */, 40000 /* totalEquity */); // -> 0.125
@@ -281,7 +281,7 @@ fcfMargin(3000 /* freeCashFlow */, 50000 /* revenue */); // -> 0.06
 
 #### Liquidity
 ```typescript
-import { currentRatio, quickRatio, debtToEquity, interestCoverage } from '@boffin-coders/finance-calculator';
+import { currentRatio, quickRatio, debtToEquity, interestCoverage } from 'finance-calculator';
 
 currentRatio(100000 /* currentAssets */, 60000 /* currentLiabilities */); // -> 1.66
 quickRatio(100000 /* currentAssets */, 10000 /* inventory */, 60000 /* currentLiabilities */); // -> 1.5
@@ -291,7 +291,7 @@ interestCoverage(7500 /* ebit */, 500 /* interestExpense */); // -> 15
 
 #### Efficiency
 ```typescript
-import { assetTurnover, inventoryTurnover } from '@boffin-coders/finance-calculator';
+import { assetTurnover, inventoryTurnover } from 'finance-calculator';
 
 assetTurnover(50000 /* revenue */, 100000 /* averageTotalAssets */); // -> 0.5
 inventoryTurnover(20000 /* costOfRevenue */, 10000 /* averageInventory */); // -> 2.0
@@ -299,7 +299,7 @@ inventoryTurnover(20000 /* costOfRevenue */, 10000 /* averageInventory */); // -
 
 #### Risk & Insights
 ```typescript
-import { altmanZScore, sharpe, targetUpside, grahamNumber } from '@boffin-coders/finance-calculator';
+import { altmanZScore, sharpe, targetUpside, grahamNumber } from 'finance-calculator';
 
 // Altman Z-Score
 altmanZScore(
@@ -321,7 +321,7 @@ grahamNumber(5 /* eps */, 20 /* bookValuePerShare */); // -> 47.43
 The growth modules return chronological arrays representing growth from the previous period. For $N$ inputs, they return an array of length $N-1$.
 
 ```typescript
-import { calculateGrowthRate, yoyGrowth, qoqGrowth, cagr } from '@boffin-coders/finance-calculator';
+import { calculateGrowthRate, yoyGrowth, qoqGrowth, cagr } from 'finance-calculator';
 
 // Base YoY historical array mapping
 yoyGrowth([40000, 45000, 50000] /* chronologicalDataPoints */); // -> [0.125, 0.1111]
