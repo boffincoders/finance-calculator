@@ -2,11 +2,18 @@
 # We only want to publish the compiled /dist folder, package.json, and README.md
 src/
 docs/
+node_modules/
+.claude/
 example.ts
 tsup.config.ts
 tsconfig.json
+tsconfig*.json
 .eslintrc.*
 .prettierrc.*
+vitest.config.*
+coverage/
 logs/
+*.log
 .DS_Store
 .github/
+package-lock.json

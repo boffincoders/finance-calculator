@@ -1,9 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-    'Noto Color Emoji';
-  background-color: #f8fafc;
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --sidebar-w: 260px;
+
+  --bg:        #ffffff;
+  --bg-subtle: #f9fafb;
+  --bg-muted:  #f3f4f6;
+  --border:    #e5e7eb;
+  --border-subtle: #f3f4f6;
+  --text:      #111827;
+  --text-2:    #374151;
+  --text-3:    #6b7280;
+  --text-4:    #9ca3af;
+  --blue:      #2563eb;
+  --blue-bg:   #eff6ff;
+  --blue-border: #bfdbfe;
+  --green:     #16a34a;
+  --red:       #dc2626;
+  --yellow:    #d97706;
+}
+
+html.dark {
+  --bg:        #0a0a0a;
+  --bg-subtle: #111111;
+  --bg-muted:  #1a1a1a;
+  --border:    #262626;
+  --border-subtle: #1f1f1f;
+  --text:      #f5f5f5;
+  --text-2:    #d4d4d4;
+  --text-3:    #a3a3a3;
+  --text-4:    #737373;
+  --blue:      #60a5fa;
+  --blue-bg:   #1e3a5f;
+  --blue-border: #1d4ed8;
+  --green:     #4ade80;
+  --red:       #f87171;
+  --yellow:    #fbbf24;
+}
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-4); }
+
+/* Custom range slider — replaces antd Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--blue);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--blue);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--blue);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+}
+
+/* Smooth page transitions */
+.page-enter { animation: fadeUp 0.18s ease; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Code blocks */
+.shiki { border-radius: 8px; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.7; padding: 1.25rem 1.5rem; }
+pre code { font-family: var(--font-mono); }
+
+/* Asymmetric doc two-col: prose 5 / code 8 */
+@media (min-width: 1024px) {
+  .doc-two-col { grid-template-columns: 5fr 8fr; }
 }

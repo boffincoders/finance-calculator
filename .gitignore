@@ -3,6 +3,10 @@ node_modules/
 
 # Build artifacts
 dist/
+docs/dist/
+
+# Claude Code session files
+.claude/
 
 # Environment files
 .env

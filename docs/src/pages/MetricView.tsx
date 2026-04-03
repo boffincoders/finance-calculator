@@ -1,140 +1,212 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Slider, Statistic, Alert, Badge, Breadcrumb, Result, Button } from 'antd';
-import { HomeOutlined } from '@ant-design/icons';
 import { metricsData } from '../data/metrics';
+import { useDark } from '../App';
 
-const MetricView: React.FC = () => {
+const STATUS_COLORS: Record<string, string> = {
+  Good:    'var(--green)',
+  Bad:     'var(--red)',
+  Neutral: 'var(--blue)',
+};
+const STATUS_BG: Record<string, string> = {
+  Good:    '#f0fdf4',
+  Bad:     '#fef2f2',
+  Neutral: 'var(--blue-bg)',
+};
+
+export default function MetricView() {
   const { id } = useParams<{ id: string }>();
   const metric = id ? metricsData[id] : null;
-
-  // Initialize state inputs based on defaults
+  const { dark } = useDark();
   const [inputs, setInputs] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (metric) {
-      const initial: Record<string, number> = {};
-      metric.inputs.forEach(input => {
-        initial[input.key] = input.default;
-      });
-      setInputs(initial);
+      const init: Record<string, number> = {};
+      metric.inputs.forEach(i => { init[i.key] = i.default; });
+      setInputs(init);
     }
   }, [metric]);
 
-  const handleInputChange = (key: string, val: number) => {
-    setInputs(prev => ({ ...prev, [key]: val }));
-  };
-
   if (!metric) {
     return (
-      <Result
-        status="404"
-        title="Metric Not Configured Yet"
-        subTitle={`The playground for the ${id} metric is currently under construction. Please use the analyzeCompany API directly for this metric or check back soon.`}
-        extra={<Button type="primary"><Link to="/">Go Home</Link></Button>}
-      />
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="text-5xl mb-4">🚧</div>
+        <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text)' }}>Playground coming soon</h2>
+        <p className="text-[14px] max-w-sm mb-6" style={{ color: 'var(--text-3)' }}>
+          The interactive playground for <code className="font-mono px-1">{id}</code> isn't configured yet. Use <code className="font-mono px-1">analyzeCompany()</code> directly.
+        </p>
+        <Link
+          to="/"
+          className="px-4 py-2 rounded-lg text-[13px] font-medium no-underline transition-colors"
+          style={{ background: 'var(--blue)', color: '#fff' }}
+        >
+          ← Back to playground
+        </Link>
+      </div>
     );
   }
 
-  // Calculate the live value using the imported pure math module
   const liveValue = Object.keys(inputs).length > 0 ? metric.calculate(inputs) : null;
-  // Evaluate the live value using the imported evaluator module
-  const analysis = (liveValue !== null && !isNaN(liveValue as number)) ? metric.evaluateInsight(liveValue) : null;
+  const analysis  = (liveValue !== null && !isNaN(liveValue as number)) ? metric.evaluateInsight(liveValue) : null;
+  const statusColor = analysis ? (STATUS_COLORS[analysis.status] ?? 'var(--text-3)') : 'var(--text-3)';
+  const statusBg    = analysis ? (STATUS_BG[analysis.status]    ?? 'var(--bg-muted)') : 'var(--bg-muted)';
 
   return (
-    <div className="animate-fade-in max-w-5xl mx-auto">
-      <Breadcrumb className="mb-6">
-        <Breadcrumb.Item href="/"><HomeOutlined /></Breadcrumb.Item>
-        <Breadcrumb.Item>{metric.category}</Breadcrumb.Item>
-        <Breadcrumb.Item>{metric.name}</Breadcrumb.Item>
-      </Breadcrumb>
+    <div>
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-[13px] mb-6" style={{ color: 'var(--text-4)' }}>
+        <Link to="/" className="no-underline hover:underline" style={{ color: 'var(--text-4)' }}>Home</Link>
+        <span>/</span>
+        <span>{metric.category}</span>
+        <span>/</span>
+        <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{metric.name}</span>
+      </div>
 
-      {/* Pure Tailwind CSS Grid for layout instead of ANTD Row/Col */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 items-start">
+      {/* Title */}
+      <h1 className="text-[1.85rem] font-bold tracking-tight mb-2" style={{ color: 'var(--text)', letterSpacing: '-0.03em' }}>
+        {metric.name}
+      </h1>
+      <p className="text-[15px] mb-8 max-w-xl leading-relaxed" style={{ color: 'var(--text-3)' }}>
+        {metric.description}
+      </p>
 
-        {/* Left Col: Explanations & Theory */}
-        <div>
-          <h2 className="text-3xl font-extrabold mb-2 text-gray-900 tracking-tight">{metric.name}</h2>
-          <p className="text-xl text-gray-500 font-light mb-8 leading-relaxed">
-            {metric.description}
-          </p>
-
-          <div className="bg-blue-50/50 shadow-sm border border-blue-100 rounded-xl p-6 mb-4 mt-4">
-            <span className="uppercase text-xs tracking-wider text-blue-600 font-bold block mb-3">The Architecture & History</span>
-            <p className="m-0 text-gray-700 leading-relaxed text-[15px]">
-              {metric.history}
-            </p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Left: theory */}
+        <div className="space-y-4">
+          {/* History card */}
+          <div className="rounded-xl p-5" style={{ border: '1px solid var(--blue-border)', background: 'var(--blue-bg)' }}>
+            <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--blue)' }}>Background</p>
+            <p className="text-[14px] leading-relaxed m-0" style={{ color: 'var(--text-2)' }}>{metric.history}</p>
           </div>
 
-          <div className="bg-white shadow-sm border border-gray-200 rounded-xl p-6 mt-2">
-            <span className="uppercase text-xs font-bold tracking-wider block mb-3 text-gray-500">The Mathematical Formula</span>
-            <div className="bg-[#0f172a] text-[#4ade80] p-6 rounded-md font-mono text-sm overflow-x-auto whitespace-nowrap shadow-inner border border-gray-800">
-              {metric.formula}
+          {/* Formula */}
+          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+            <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'var(--bg-muted)', borderBottom: '1px solid var(--border)' }}>
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-4)' }}>Formula</span>
+              <div className="flex gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+              </div>
             </div>
+            <div className="px-5 py-4" style={{ background: '#0d1117' }}>
+              <code className="text-[14px] font-mono" style={{ color: '#4ade80' }}>{metric.formula}</code>
+            </div>
+          </div>
+
+          {/* Benchmark callout */}
+          {metric.benchmark && (
+            <div
+              className="rounded-xl p-4 flex items-start gap-3"
+              style={{
+                background: dark ? '#2d1f00' : '#fefce8',
+                border: `1px solid ${dark ? '#78350f' : '#fde68a'}`,
+              }}
+            >
+              <svg className="shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--yellow)' }}>
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--yellow)' }}>Benchmark Thresholds</p>
+                <p className="text-[13px] leading-relaxed m-0" style={{ color: dark ? '#fde68a' : '#92400e' }}>{metric.benchmark}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Category badge */}
+          <div>
+            <span
+              className="inline-flex items-center text-[11px] font-semibold px-3 py-1.5 rounded-full uppercase tracking-wider"
+              style={{ background: 'var(--bg-muted)', color: 'var(--text-3)', border: '1px solid var(--border)' }}
+            >
+              {metric.category}
+            </span>
           </div>
         </div>
 
-        {/* Right Col: Interactive Playground */}
-        <div>
-          <div className="bg-white shadow-lg border-t-4 border-t-blue-500 border-x border-b border-gray-200 rounded-xl p-8">
-            <h3 className="text-lg font-bold text-gray-800 mb-8 pb-4 border-b border-gray-100">
-              <span className="text-blue-600 font-semibold mr-2">•</span>Live Mathematical Playground
-            </h3>
-            <div className="mb-10 space-y-8">
-              {metric.inputs.map(input => (
-                <div key={input.key}>
-                  <div className="flex justify-between mb-2">
-                    <label className="font-semibold text-gray-700 text-sm">{input.label}</label>
-                    <span className="text-gray-500 font-mono text-sm font-medium">
-                      {input.prefix}{inputs[input.key]?.toLocaleString()}
-                    </span>
-                  </div>
-                  <Slider
-                    min={input.min}
-                    max={input.max}
-                    step={input.step}
-                    value={inputs[input.key]}
-                    onChange={(val) => handleInputChange(input.key, val)}
-                    tooltip={{ open: false }}
-                  />
+        {/* Right: playground */}
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'var(--bg)' }}>
+          {/* Header */}
+          <div className="px-5 py-4 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+            <div className="w-2 h-2 rounded-full" style={{ background: 'var(--blue)' }} />
+            <span className="text-[13px] font-semibold" style={{ color: 'var(--text-2)' }}>Live Playground</span>
+          </div>
+
+          {/* Sliders */}
+          <div className="px-5 py-5 space-y-6">
+            {metric.inputs.map(input => (
+              <div key={input.key}>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[13px] font-medium" style={{ color: 'var(--text-2)' }}>{input.label}</label>
+                  <span
+                    className="text-[13px] font-mono font-semibold px-2 py-0.5 rounded"
+                    style={{ background: 'var(--bg-muted)', color: 'var(--text)', border: '1px solid var(--border)' }}
+                  >
+                    {input.prefix || ''}{inputs[input.key]?.toLocaleString()}
+                  </span>
                 </div>
-              ))}
-            </div>
-
-            <hr className="border-gray-100 my-8" />
-
-            <div className="bg-gray-50/80 p-8 rounded-xl border border-gray-200 text-center shadow-inner">
-              <span className="block mb-2 uppercase text-[11px] font-bold tracking-[0.2em] text-gray-400">Calculated Output</span>
-              <Statistic
-                value={liveValue}
-                precision={2}
-                valueStyle={{ fontSize: '3.5rem', lineHeight: 1, fontWeight: 800, color: '#111827' }}
-              />
-
-              {analysis && (
-                <div className="mt-6 animate-fade-in">
-                  <Badge
-                    status={analysis.status === 'Good' ? 'success' : analysis.status === 'Bad' ? 'error' : 'processing'}
-                    text={<span className="font-bold text-sm ml-1">{analysis.status}</span>}
-                  />
-                  <p className="text-gray-500 mt-3 text-sm italic leading-relaxed max-w-xs mx-auto">
-                    "{analysis.insight}"
-                  </p>
+                <input
+                  type="range"
+                  min={input.min}
+                  max={input.max}
+                  step={input.step}
+                  value={inputs[input.key] ?? input.default}
+                  onChange={e => setInputs(prev => ({ ...prev, [input.key]: Number(e.target.value) }))}
+                />
+                <div className="flex justify-between mt-1">
+                  <span className="text-[10px]" style={{ color: 'var(--text-4)' }}>{input.min.toLocaleString()}</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-4)' }}>{input.max.toLocaleString()}</span>
                 </div>
-              )}
+              </div>
+            ))}
+          </div>
+
+          {/* Result */}
+          <div
+            className="mx-5 mb-5 rounded-xl p-6 text-center"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--text-4)' }}>
+              Result
+            </p>
+            <div className="text-[3.5rem] font-black tabular-nums leading-none" style={{ color: 'var(--text)', letterSpacing: '-0.04em' }}>
+              {liveValue !== null && !isNaN(liveValue as number)
+                ? (liveValue as number).toFixed(2)
+                : '—'}
             </div>
-            <div className='mt-2'>
-              <Alert
-                className="shadow-sm"
-                title={<span className="text-xs text-gray-700">Zero-dependency evaluation powered natively by <code className="bg-white/50 px-1 rounded border border-green-200 text-green-700 font-semibold">finance-calculator-pro</code> inside your browser. No API requests were made.</span>}
-                type="success"
-              />
-            </div>
+
+            {analysis && (
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-center">
+                  <span
+                    className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1 rounded-full"
+                    style={{ background: statusBg, color: statusColor, border: `1px solid ${statusColor}30` }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: statusColor }} />
+                    {analysis.status}
+                  </span>
+                </div>
+                <p className="text-[13px] italic max-w-xs mx-auto leading-relaxed" style={{ color: 'var(--text-3)' }}>
+                  "{analysis.insight}"
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer note */}
+          <div
+            className="px-5 py-3 flex items-center gap-2 text-[12px]"
+            style={{ borderTop: '1px solid var(--border)', color: 'var(--text-4)', background: 'var(--bg-subtle)' }}
+          >
+            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--green)', flexShrink: 0 }}>
+              <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm-1 15v-5H9l3-7 3 7h-2v5h-2z"/>
+            </svg>
+            Computed natively by <code className="font-mono px-1">finance-calculator-pro</code> — zero API calls
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default MetricView;
+}

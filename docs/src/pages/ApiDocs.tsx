@@ -1,305 +1,528 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { createHighlighter, type Highlighter } from 'shiki';
 import { metricsData } from '../data/metrics';
-import { SearchOutlined } from '@ant-design/icons';
+import { useDark } from '../App';
 
-const ApiDocs: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+// ── Shiki code block ────────────────────────────────────────────────────────
+let _hl: Highlighter | null = null;
+async function getHighlighter(_dark: boolean) {
+  if (!_hl) {
+    _hl = await createHighlighter({
+      themes: ['github-dark', 'github-light'],
+      langs: ['typescript', 'bash', 'json'],
+    });
+  }
+  return _hl;
+}
 
-  // Group metrics by category
-  const categorizedMetrics = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    Object.values(metricsData).forEach(metric => {
-      if (!groups[metric.category]) {
-        groups[metric.category] = [];
+function CodeBlock({ code, lang = 'typescript' }: { code: string; lang?: string }) {
+  const { dark } = useDark();
+  const [html, setHtml] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getHighlighter(dark).then(hl => {
+      if (!cancelled) {
+        setHtml(hl.codeToHtml(code.trim(), {
+          lang,
+          theme: dark ? 'github-dark' : 'github-light',
+        }));
       }
-      groups[metric.category].push(metric);
+    });
+    return () => { cancelled = true; };
+  }, [code, lang, dark]);
+
+  const copy = () => {
+    navigator.clipboard.writeText(code.trim());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  return (
+    <div className="relative group rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+      {/* top bar */}
+      <div className="flex items-center justify-between px-4 py-2" style={{ background: 'var(--bg-muted)', borderBottom: '1px solid var(--border)' }}>
+        <div className="flex gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+        </div>
+        <span className="text-[11px] font-mono" style={{ color: 'var(--text-4)' }}>{lang}</span>
+        <button
+          onClick={copy}
+          className="text-[11px] px-2 py-0.5 rounded transition-colors"
+          style={{ background: 'var(--bg)', color: copied ? 'var(--green)' : 'var(--text-4)', border: '1px solid var(--border)', cursor: 'pointer' }}
+        >
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+      {html
+        ? <div dangerouslySetInnerHTML={{ __html: html }} style={{ fontSize: 13 }} />
+        : <pre className="px-5 py-4 text-[13px] font-mono overflow-x-auto" style={{ background: dark ? '#0d1117' : '#f6f8fa', color: 'var(--text-2)', margin: 0 }}>{code.trim()}</pre>
+      }
+    </div>
+  );
+}
+
+// ── Shared section components ────────────────────────────────────────────────
+function SectionHeading({ id, number, title }: { id: string; number?: string; title: string }) {
+  return (
+    <div id={id} className="flex items-baseline gap-3 mb-1 scroll-mt-20">
+      {number && <span className="text-[13px] font-mono shrink-0" style={{ color: 'var(--text-4)' }}>{number}</span>}
+      <h2 className="text-[1.4rem] font-bold tracking-tight m-0" style={{ color: 'var(--text)', letterSpacing: '-0.02em' }}>{title}</h2>
+    </div>
+  );
+}
+
+function Prose({ children }: { children: React.ReactNode }) {
+  return <p className="text-[14px] leading-relaxed mb-5 mt-2" style={{ color: 'var(--text-3)' }}>{children}</p>;
+}
+
+function TwoCol({ left, right }: { left: React.ReactNode; right: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 doc-two-col gap-10 mb-12">
+      <div className="min-w-0">{left}</div>
+      <div className="min-w-0">{right}</div>
+    </div>
+  );
+}
+
+function NullCallout() {
+  return (
+    <div className="flex items-start gap-3 rounded-lg px-4 py-3 mb-5" style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)' }}>
+      <svg className="shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--blue)' }}>
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p className="text-[13px] m-0 leading-relaxed" style={{ color: 'var(--text-3)' }}>
+        All functions return{' '}
+        <code className="font-mono text-[12px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--blue)', border: '1px solid var(--border)' }}>number | null</code>.{' '}
+        <span style={{ color: 'var(--text-2)' }}>Null means a required input was absent</span> — the library never throws. Safe to call with partial data at any time.
+      </p>
+    </div>
+  );
+}
+
+function FnTag({ name }: { name: string }) {
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded text-[12px] font-mono" style={{ background: 'var(--blue-bg)', color: 'var(--blue)', border: '1px solid var(--blue-border)' }}>
+      {name}
+    </span>
+  );
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
+const INSTALL_CODE = `npm install finance-calculator-pro
+# or
+yarn add finance-calculator-pro
+pnpm add finance-calculator-pro`;
+
+const CORE_CODE = `import { analyzeCompany } from 'finance-calculator-pro';
+
+const data = {
+  price: 150, eps: 5.50,
+  netIncome: 1_000_000, totalAssets: 5_000_000,
+  totalDebt: 500_000, cashAndEquivalents: 200_000,
+};
+
+// Returns 7 categories: valuation, profitability, liquidity,
+// solvency, efficiency, risk, quality
+const analysis = analyzeCompany(data, true /* withInsights */);
+
+console.log(analysis.valuation.pe);
+// { value: 27.27, status: "Bad", insight: "Expensive. High growth is priced in." }
+
+console.log(analysis.solvency.netDebtToEbitda);
+// { value: 1.5, status: "Good", insight: "Low leverage. Manageable debt load." }
+
+console.log(analysis.quality.cashConversionRatio);
+// { value: 1.4, status: "Good", insight: "Cash-backed earnings. Strong quality." }`;
+
+const CATEGORICAL_CODE = `import {
+  analyzeValuation, analyzeSolvency,
+  analyzeEfficiency, analyzeQuality,
+} from 'finance-calculator-pro';
+
+const data = {
+  price: 150, eps: 5,
+  totalDebt: 20000, cashAndEquivalents: 5000,
+  ebitda: 10000, operatingCashFlow: 7000,
+  netIncome: 5000, annualDividendPerShare: 2,
+};
+
+// Run only what you need — each function accepts the same input shape
+const solvency = analyzeSolvency(data, true);
+console.log(solvency.netDebtToEbitda);
+// { value: 1.5, status: "Good", insight: "..." }
+
+const quality = analyzeQuality(data, true);
+console.log(quality.cashConversionRatio);
+// { value: 1.4, status: "Good", insight: "..." }`;
+
+const BATCH_CODE = `import { analyzeBatch, analyzeFundamentalTrends } from 'finance-calculator-pro';
+
+// Evaluate multiple companies at once — returns the same shape as analyzeCompany()
+const results = analyzeBatch([appleData, msftData, googleData], true);
+results[0].valuation.pe;  // { value: 28.5, status: "Bad", insight: "..." }
+
+// Timeseries growth analysis — pass arrays [oldest → newest]
+const trends = analyzeFundamentalTrends({
+  revenue:   [365_817, 394_328, 383_285],
+  netIncome: [ 94_680,  99_803,  96_995],
+}, 'annual');
+
+// Return shape:
+// trends.growth.revenueCagr       → number | null  (-2.2% CAGR)
+// trends.growth.revenueGrowth     → number[]       [+7.7%, -2.8%]
+// trends.growth.netIncomeCagr     → number | null
+// trends.margins.netProfitMargin  → number[]       [25.9%, 25.3%, 25.3%]
+// trends.quality.fcfConversion    → number[]       (FCF / Net Income per period)
+console.log(trends.growth.revenueCagr);   // -0.022
+console.log(trends.growth.revenueGrowth); // [0.0777, -0.0282]`;
+
+const TYPES_CODE = `interface CompanySnapshotInput {
+  // Pricing
+  price?: number;
+  marketCap?: number;
+  eps?: number;
+  bookValuePerShare?: number;
+  revenuePerShare?: number;
+  annualDividendPerShare?: number;
+  analystTargetPrice?: number;
+
+  // Income Statement
+  totalRevenue?: number;
+  grossProfit?: number;
+  operatingIncome?: number;
+  netIncome?: number;
+  freeCashFlow?: number;
+  operatingCashFlow?: number;
+  ebitda?: number;
+  ebit?: number;
+  costOfRevenue?: number;
+  interestExpense?: number;
+  expectedEarningsGrowthRate?: number;
+
+  // Balance Sheet
+  totalAssets?: number;
+  totalLiabilities?: number;
+  totalEquity?: number;
+  totalDebt?: number;
+  longTermDebt?: number;
+  cashAndEquivalents?: number;
+  inventory?: number;
+  tradeReceivables?: number;
+  workingCapital?: number;
+  retainedEarnings?: number;
+  sharesOutstanding?: number;
+  taxRate?: number;
+
+  // Risk / Portfolio
+  returns?: number;
+  riskFree?: number;
+  stdDev?: number;
+}`;
+
+const SINGLE_CODE = `import {
+  pe, pb, ps, peg,
+  priceToCashFlow, earningsYield,
+  evEbitda, evRevenue, evFcf,
+  roa, roe, roic,
+  grossMargin, operatingMargin, netProfitMargin,
+  currentRatio, quickRatio, debtToEquity,
+  netDebt, netDebtToEbitda, debtToAssets,
+  assetTurnover, receivablesTurnover, daysSalesOutstanding,
+  payoutRatio, cashConversionRatio,
+  altmanZScore, piotroski, sharpe,
+  grahamNumber, calculateDCF,
+  evaluate,
+} from 'finance-calculator-pro';
+
+// Every function returns number | null — null on divide-by-zero
+pe(150, 5);                              // → 30
+priceToCashFlow(150_000, 7_000);         // → 21.43
+earningsYield(5, 150);                   // → 0.0333
+
+netDebtToEbitda(20_000, 5_000, 10_000); // → 1.5
+daysSalesOutstanding(50_000, 6_250);     // → 45.6 days
+cashConversionRatio(7_000, 5_000);       // → 1.4
+
+grahamNumber(5, 20);                     // → 47.43  (null if EPS/book ≤ 0)
+altmanZScore(15_000, 20_000, 7_500, 250_000, 50_000, 100_000, 60_000); // → 3.71
+
+const result = piotroski({
+  netIncome: 5_000, totalAssets: 100_000, operatingCashFlow: 7_000,
+  priorNetIncome: 4_000, priorTotalAssets: 100_000,
+});
+result.score;    // → 4
+result.maxScore; // → 5
+
+// Pair raw math with the evaluator
+const ratio = pe(150, 5);            // → 30
+evaluate.pe(ratio);
+// { value: 30, status: "Bad", insight: "Expensive. High growth is priced in." }`;
+
+export default function ApiDocs() {
+  const [search, setSearch] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // ⌘K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const categorized = useMemo(() => {
+    const groups: Record<string, typeof metricsData[string][]> = {};
+    Object.values(metricsData).forEach(m => {
+      if (!groups[m.category]) groups[m.category] = [];
+      groups[m.category].push(m);
     });
     return groups;
   }, []);
 
-  // Filter metrics based on search query
-  const filteredCategories = useMemo(() => {
-    if (!searchQuery.trim()) return categorizedMetrics;
-    
-    const lowerQuery = searchQuery.toLowerCase();
-    const result: Record<string, any[]> = {};
-    
-    Object.entries(categorizedMetrics).forEach(([category, metrics]) => {
-      // If category matches, include all its metrics
-      if (category.toLowerCase().includes(lowerQuery)) {
-        result[category] = metrics;
-        return;
-      }
-      
-      // Otherwise, filter the metrics inside the category
-      const matchedMetrics = metrics.filter(m => 
-        m.name.toLowerCase().includes(lowerQuery) || 
-        m.description.toLowerCase().includes(lowerQuery) ||
-        m.formula.toLowerCase().includes(lowerQuery)
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return categorized;
+    const out: typeof categorized = {};
+    Object.entries(categorized).forEach(([cat, metrics]) => {
+      if (cat.toLowerCase().includes(q)) { out[cat] = metrics; return; }
+      const hit = metrics.filter(m =>
+        m.name.toLowerCase().includes(q) ||
+        m.description.toLowerCase().includes(q) ||
+        m.formula.toLowerCase().includes(q)
       );
-      
-      if (matchedMetrics.length > 0) {
-        result[category] = matchedMetrics;
-      }
+      if (hit.length) out[cat] = hit;
     });
-    
-    return result;
-  }, [searchQuery, categorizedMetrics]);
+    return out;
+  }, [search, categorized]);
+
+  const totalMetrics = Object.values(categorized).reduce((n, ms) => n + ms.length, 0);
 
   return (
-    <div className="animate-fade-in max-w-7xl mx-auto pb-12 flex flex-col xl:flex-row gap-8 items-start relative">
-      
-      {/* LEFT SIDEBAR: Searchable Table of Contents (Sticky) */}
-      <div className="hidden xl:block w-72 sticky top-6 shrink-0 h-[calc(100vh-100px)] overflow-y-auto pr-4 custom-scrollbar">
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">API Reference ToC</h3>
-        <nav className="space-y-1 mb-8">
-          <a href="#installation" className="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md font-medium transition-colors">1. Installation</a>
-          <a href="#core-api" className="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md font-medium transition-colors">2. Core API Engine</a>
-          <a href="#batch-api" className="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md font-medium transition-colors">3. Batch & Time-Series</a>
-          <a href="#types" className="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md font-medium transition-colors">4. Type Definitions</a>
-          <a href="#metric-dictionary" className="block px-3 py-2 text-sm text-blue-600 font-bold bg-blue-50 rounded-md transition-colors border-l-4 border-blue-500">5. Metric Dictionary</a>
-        </nav>
-
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Financial Categories</h3>
-        <ul className="space-y-4 border-l border-gray-200 ml-2">
-          {Object.keys(categorizedMetrics).map(category => (
-            <li key={category}>
-              <a href={`#category-${category.toLowerCase().replace(/[^a-z0-9]/g, '-')}`} className="block -ml-[1px] pl-4 border-l-2 border-transparent hover:border-blue-500 text-sm text-gray-600 hover:text-blue-600 font-medium">
-                {category}
-              </a>
-              <ul className="mt-2 space-y-2">
-                {categorizedMetrics[category].map(m => (
-                  <li key={m.id}>
-                    <a href={`#metric-${m.id}`} className="block pl-8 text-xs text-gray-500 hover:text-gray-900 truncate">
-                      {m.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </li>
+    <div className="flex gap-10 items-start">
+      {/* ── Right sticky TOC (hidden on small screens) ── */}
+      <div className="hidden xl:block w-56 shrink-0 sticky top-20 self-start" style={{ order: 2 }}>
+        <p className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-4)' }}>On this page</p>
+        <nav className="space-y-1" style={{ borderLeft: '1px solid var(--border)' }}>
+          {[
+            { id: 'installation',    label: 'Installation' },
+            { id: 'core-api',        label: 'analyzeCompany' },
+            { id: 'categorical-api', label: 'Categorical Analyzers' },
+            { id: 'batch-api',       label: 'Batch & Timeseries' },
+            { id: 'types',           label: 'Type Definitions' },
+            { id: 'single',          label: 'Individual Functions' },
+            { id: 'dictionary',      label: 'Metric Dictionary' },
+          ].map(({ id, label }) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className="block pl-3 py-1 text-[13px] no-underline transition-colors"
+              style={{ color: 'var(--text-4)', borderLeft: '2px solid transparent', marginLeft: -1 }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-4)'; }}
+            >
+              {label}
+            </a>
           ))}
-        </ul>
+        </nav>
       </div>
 
-      {/* MAIN CONTENT AREA */}
-      <div className="flex-1 w-full min-w-0">
-        <div className="mb-12 border-b border-gray-200 pb-8">
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-4">Developer API Documentation</h1>
-          <p className="text-xl text-gray-500 font-light max-w-3xl leading-relaxed">
-            Embed the <code className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-lg">finance-calculator-pro</code> engine directly into your software. Everything you need to know about categories, metrics, and implementations—all on a single page.
+      {/* ── Main content ── */}
+      <div className="flex-1 min-w-0" style={{ order: 1 }}>
+        {/* Page header */}
+        <div className="mb-10">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider" style={{ background: 'var(--blue-bg)', color: 'var(--blue)', border: '1px solid var(--blue-border)' }}>
+              API Reference
+            </span>
+          </div>
+          <h1 className="text-[2rem] font-bold tracking-tight mb-3" style={{ color: 'var(--text)', letterSpacing: '-0.03em' }}>
+            Developer Documentation
+          </h1>
+          <p className="text-[15px] max-w-2xl leading-relaxed" style={{ color: 'var(--text-3)' }}>
+            Embed <code className="px-1.5 py-0.5 rounded text-[13px] font-mono" style={{ background: 'var(--bg-muted)', color: 'var(--blue)', border: '1px solid var(--border)' }}>finance-calculator-pro</code> directly into your app.
+            Every field is optional — the engine skips metrics it can't compute and returns <code className="font-mono text-[13px]">null</code> safely.
           </p>
         </div>
 
-        <div className="space-y-16">
+        <div className="space-y-12">
 
-          {/* SECTION: Quickstart */}
-          <section id="installation" className="scroll-mt-10">
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-              <div className="lg:w-1/2">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Installation</h2>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  Install the package via npm, yarn, or pnpm. It is compiled to CommonJS and ESM.
-                </p>
-              </div>
-              <div className="lg:w-1/2 w-full">
-                <div className="bg-[#0f172a] rounded-xl p-6 shadow-xl border border-gray-800">
-                  <div className="flex space-x-2 mb-4">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  </div>
-                  <pre className="text-sm font-mono text-gray-300 overflow-x-auto">
-<div><span className="text-green-400">npm</span> install finance-calculator-pro</div>
-<br/>
-<div><span className="text-gray-500"># Or using yarn</span></div>
-<div><span className="text-green-400">yarn</span> add finance-calculator-pro</div>
-                  </pre>
-                </div>
-              </div>
-            </div>
+          {/* 1 · Installation */}
+          <section id="installation" className="scroll-mt-20">
+            <SectionHeading id="installation" number="01" title="Installation" />
+            <Prose>Works with any Node.js ≥ 16 environment. Zero runtime dependencies — ships as CJS + ESM + type declarations.</Prose>
+            <CodeBlock code={INSTALL_CODE} lang="bash" />
           </section>
 
-          <hr className="border-gray-100" />
+          <Divider />
 
-          {/* SECTION: analyzeCompany */}
-          <section id="core-api" className="scroll-mt-10">
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-              <div className="lg:w-1/2">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">2. The Core API Engine</h2>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  Pass a flat <code className="bg-gray-100 px-1 py-0.5 rounded text-sm text-red-500 font-mono">CompanySnapshotInput</code> object containing the raw fundamental data of a company. 
-                  Setting the second argument to <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">true</code> enables the <span className="font-semibold">Insights Engine</span>.
-                </p>
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                  <p className="text-sm text-blue-800 m-0">
-                    <strong>Pro Tip:</strong> Any omitted data fields will simply cause their dependent formulas to return <code className="font-mono bg-blue-100 px-1 rounded">null</code>. The engine will never throw an error for missing data.
-                  </p>
-                </div>
-              </div>
-              <div className="lg:w-1/2 w-full">
-                <div className="bg-[#0f172a] rounded-xl shadow-xl border border-gray-800 overflow-hidden">
-                  <div className="bg-[#1e293b] text-gray-400 text-xs px-4 py-2 font-mono flex justify-between border-b border-gray-700">
-                    <span>index.ts</span>
-                    <span>TypeScript</span>
+          {/* 2 · analyzeCompany */}
+          <section id="core-api" className="scroll-mt-20">
+            <SectionHeading id="core-api" number="02" title="analyzeCompany — the all-in-one API" />
+            <TwoCol
+              left={
+                <>
+                  <Prose>
+                    Pass a <code className="font-mono text-[13px]">CompanySnapshotInput</code> object with any subset of fields.
+                    The second argument enables the <strong>Insights Engine</strong> — each metric returns a structured object with <code className="font-mono text-[13px]">value</code>, <code className="font-mono text-[13px]">status</code>, and <code className="font-mono text-[13px]">insight</code>.
+                  </Prose>
+                  <div className="rounded-xl p-4 space-y-2" style={{ background: 'var(--blue-bg)', border: '1px solid var(--blue-border)' }}>
+                    <p className="text-[13px] font-semibold m-0" style={{ color: 'var(--blue)' }}>Returns 7 categories:</p>
+                    {['valuation', 'profitability', 'liquidity', 'solvency', 'efficiency', 'risk', 'quality'].map(c => (
+                      <div key={c} className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--blue)' }} />
+                        <code className="text-[12px] font-mono" style={{ color: 'var(--text-2)' }}>analysis.{c}</code>
+                      </div>
+                    ))}
                   </div>
-                  <div className="p-6">
-                    <pre className="text-sm font-mono text-gray-300 overflow-x-auto leading-relaxed">
-<div><span className="text-purple-400">import</span> {"{"} analyzeCompany {"}"} <span className="text-purple-400">from</span> <span className="text-green-300">'finance-calculator-pro'</span>;</div>
-<br/>
-<div><span className="text-gray-500">// 1. Build the data payload</span></div>
-<div><span className="text-purple-400">const</span> rawData = {"{"}</div>
-<div>  price: <span className="text-yellow-300">150</span>,</div>
-<div>  eps: <span className="text-yellow-300">5.50</span>,</div>
-<div>  netIncome: <span className="text-yellow-300">1000000</span>,</div>
-<div>  totalAssets: <span className="text-yellow-300">5000000</span></div>
-<div>{"}"};</div>
-<br/>
-<div><span className="text-gray-500">// 2. Execute analysis with Insights enabled</span></div>
-<div><span className="text-purple-400">const</span> analysis = <span className="text-blue-400">analyzeCompany</span>(rawData, <span className="text-orange-400">true</span>);</div>
-<br/>
-<div><span className="text-blue-400">console</span>.<span className="text-blue-300">log</span>(analysis.valuation.pe);</div>
-<div><span className="text-gray-500">/* Output:</span></div>
-<div><span className="text-gray-500">  {"{"}</span></div>
-<div><span className="text-gray-500">    value: 27.27,</span></div>
-<div><span className="text-gray-500">    status: "Bad",</span></div>
-<div><span className="text-gray-500">    insight: "Expensive. High growth is priced in."</span></div>
-<div><span className="text-gray-500">  {"}"}</span></div>
-<div><span className="text-gray-500">*/</span></div>
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            </div>
+                </>
+              }
+              right={<CodeBlock code={CORE_CODE} />}
+            />
           </section>
 
-          <hr className="border-gray-100" />
+          <Divider />
 
-          {/* SECTION: Batch API */}
-          <section id="batch-api" className="scroll-mt-10">
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-              <div className="lg:w-1/2">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Batch & Time-Series</h2>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  The engine also includes native support for evaluating arrays of companies simultaneously, and traversing chronological time-series data to extract growth CAGRs.
-                </p>
-              </div>
-              <div className="lg:w-1/2 w-full">
-                <div className="bg-[#0f172a] rounded-xl shadow-xl border border-gray-800 overflow-hidden h-full">
-                  <div className="bg-[#1e293b] text-gray-400 text-xs px-4 py-2 font-mono flex justify-between border-b border-gray-700">
-                    <span>batch-analysis.ts</span>
-                    <span>TypeScript</span>
+          {/* 3 · Categorical */}
+          <section id="categorical-api" className="scroll-mt-20">
+            <SectionHeading id="categorical-api" number="03" title="Categorical Analyzers" />
+            <TwoCol
+              left={
+                <>
+                  <Prose>Run analysis on a single dimension instead of all seven. Useful for dashboards, screeners, or compute-sensitive environments.</Prose>
+                  <div className="space-y-2">
+                    {[
+                      { fn: 'analyzeValuation',    note: 'P/E, P/B, P/S, PEG, EV/EBITDA, Graham, P/CF, EY, EV/Rev, EV/FCF' },
+                      { fn: 'analyzeProfitability', note: 'ROA, ROE, ROIC, all margins' },
+                      { fn: 'analyzeLiquidity',     note: 'Current, Quick, D/E, Interest Coverage' },
+                      { fn: 'analyzeSolvency',      note: 'Net Debt, Net Debt/EBITDA, Debt/Assets' },
+                      { fn: 'analyzeEfficiency',    note: 'Asset Turnover, Inventory, Receivables, DSO' },
+                      { fn: 'analyzeRisk',          note: 'Altman Z, Sharpe, Piotroski F-Score' },
+                      { fn: 'analyzeQuality',       note: 'Payout Ratio, CCR, Target Upside' },
+                    ].map(({ fn, note }) => (
+                      <div key={fn} className="flex items-start gap-3 px-3 py-2.5 rounded-lg" style={{ border: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+                        <FnTag name={fn} />
+                        <span className="text-[12px] pt-0.5" style={{ color: 'var(--text-3)' }}>{note}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="p-6">
-                    <pre className="text-sm font-mono text-gray-300 overflow-x-auto leading-relaxed">
-<div><span className="text-purple-400">import</span> {"{"} analyzeBatch, analyzeFundamentalTrends {"}"} <span className="text-purple-400">from</span> <span className="text-green-300">'finance-calculator-pro'</span>;</div>
-<br/>
-<div><span className="text-gray-500">// Process multiple companies concurrently</span></div>
-<div><span className="text-purple-400">const</span> competitors = <span className="text-blue-400">analyzeBatch</span>([appleData, msftData, googleData], <span className="text-orange-400">true</span>);</div>
-<br/>
-<div><span className="text-gray-500">// Evaluate 3 years of sequential fundamental data [2021, 2022, 2023]</span></div>
-<div><span className="text-purple-400">const</span> timeseries = {"{"}</div>
-<div>  revenue: [<span className="text-yellow-300">365817</span>, <span className="text-yellow-300">394328</span>, <span className="text-yellow-300">383285</span>],</div>
-<div>  netIncome: [<span className="text-yellow-300">94680</span>, <span className="text-yellow-300">99803</span>, <span className="text-yellow-300">96995</span>]</div>
-<div>{"}"};</div>
-<div><span className="text-purple-400">const</span> trends = <span className="text-blue-400">analyzeFundamentalTrends</span>(timeseries, <span className="text-green-300">'annual'</span>);</div>
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            </div>
+                </>
+              }
+              right={<CodeBlock code={CATEGORICAL_CODE} />}
+            />
           </section>
 
-          <hr className="border-gray-100" />
+          <Divider />
 
-          {/* SECTION: Response Interfaces */}
-          <section id="types" className="scroll-mt-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">4. Exhaustive Type Definitions</h2>
-            <div className="bg-[#0f172a] rounded-xl p-6 shadow-xl border border-gray-800 mb-8">
-              <pre className="text-sm font-mono text-gray-300 overflow-x-auto leading-relaxed">
-<div><span className="text-gray-500">/** The complete input data signature. ALL fields are optional because the engine gracefully skips missing derivations. */</span></div>
-<div><span className="text-purple-400">export interface</span> <span className="text-blue-300">CompanySnapshotInput</span> {"{"}</div>
-<div>  price?: <span className="text-yellow-300">number</span>;</div>
-<div>  marketCap?: <span className="text-yellow-300">number</span>;</div>
-<div>  totalRevenue?: <span className="text-yellow-300">number</span>;</div>
-<div>  grossProfit?: <span className="text-yellow-300">number</span>;</div>
-<div>  operatingIncome?: <span className="text-yellow-300">number</span>;</div>
-<div>  netIncome?: <span className="text-yellow-300">number</span>;</div>
-<div>  freeCashFlow?: <span className="text-yellow-300">number</span>;</div>
-<div>  eps?: <span className="text-yellow-300">number</span>;</div>
-<div>  bookValuePerShare?: <span className="text-yellow-300">number</span>;</div>
-<div>  revenuePerShare?: <span className="text-yellow-300">number</span>;</div>
-<div>  totalAssets?: <span className="text-yellow-300">number</span>;</div>
-<div>  totalLiabilities?: <span className="text-yellow-300">number</span>;</div>
-<div>  totalEquity?: <span className="text-yellow-300">number</span>;</div>
-<div>  totalDebt?: <span className="text-yellow-300">number</span>;</div>
-<div>  cashAndEquivalents?: <span className="text-yellow-300">number</span>;</div>
-<div>  inventory?: <span className="text-yellow-300">number</span>;</div>
-<div>  interestExpense?: <span className="text-yellow-300">number</span>;</div>
-<div>  costOfRevenue?: <span className="text-yellow-300">number</span>;</div>
-<div>  annualDividendPerShare?: <span className="text-yellow-300">number</span>;</div>
-<div>  expectedEarningsGrowthRate?: <span className="text-yellow-300">number</span>;</div>
-<div>  ebitda?: <span className="text-yellow-300">number</span>;</div>
-<div>  workingCapital?: <span className="text-yellow-300">number</span>;</div>
-<div>  retainedEarnings?: <span className="text-yellow-300">number</span>;</div>
-<div>  ebit?: <span className="text-yellow-300">number</span>;</div>
-<div>  taxRate?: <span className="text-yellow-300">number</span>;</div>
-<div>  returns?: <span className="text-yellow-300">number</span>;</div>
-<div>  riskFree?: <span className="text-yellow-300">number</span>;</div>
-<div>  stdDev?: <span className="text-yellow-300">number</span>;</div>
-<div>  analystTargetPrice?: <span className="text-yellow-300">number</span>;</div>
-<div>{"}"}</div>
-              </pre>
-            </div>
+          {/* 4 · Batch */}
+          <section id="batch-api" className="scroll-mt-20">
+            <SectionHeading id="batch-api" number="04" title="Batch & Timeseries" />
+            <TwoCol
+              left={
+                <Prose>
+                  <strong>analyzeBatch</strong> evaluates an array of snapshots in one call — ideal for stock screeners.
+                  <br /><br />
+                  <strong>analyzeFundamentalTrends</strong> accepts chronological arrays (oldest → newest) and returns YoY/QoQ growth rates and CAGRs automatically.
+                </Prose>
+              }
+              right={<CodeBlock code={BATCH_CODE} />}
+            />
           </section>
 
-          <hr className="border-gray-400 border-2" />
+          <Divider />
 
-          {/* SECTION: Interactive Master Dictionary */}
-          <section id="metric-dictionary" className="scroll-mt-10 bg-gray-50 rounded-2xl p-8 border border-gray-200 shadow-sm">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-6 border-b border-gray-200">
-              <div className="mb-4 md:mb-0 max-w-2xl">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">5. Master Metric Dictionary</h2>
-                <p className="text-gray-600">
-                  Import any of these standalone formulas natively: <code className="bg-gray-200 px-1 py-0.5 rounded text-red-600 text-sm">import {'{'} roic, wacc {'}'} from 'finance-calculator-pro'</code>. 
-                  Search below to find out exactly what each metric does and how the math works natively.
+          {/* 5 · Types */}
+          <section id="types" className="scroll-mt-20">
+            <SectionHeading id="types" number="05" title="Type Definitions" />
+            <Prose>
+              Every field in <code className="font-mono text-[13px]">CompanySnapshotInput</code> is optional.
+              Missing fields cause their dependent metrics to return <code className="font-mono text-[13px]">null</code> — the engine never throws.
+            </Prose>
+            <CodeBlock code={TYPES_CODE} />
+          </section>
+
+          <Divider />
+
+          {/* 6 · Individual functions */}
+          <section id="single" className="scroll-mt-20">
+            <SectionHeading id="single" number="06" title="Individual Math Functions" />
+            <Prose>
+              Import any function directly for lightweight single-metric use.
+              Pair with <code className="font-mono text-[13px]">evaluate.*</code> to get insights without building a full snapshot.
+            </Prose>
+            <NullCallout />
+            <CodeBlock code={SINGLE_CODE} />
+          </section>
+
+          <Divider />
+
+          {/* 7 · Dictionary */}
+          <section id="dictionary" className="scroll-mt-20">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-4">
+              <div>
+                <SectionHeading id="dictionary" number="07" title="Metric Dictionary" />
+                <p className="text-[13px] mt-1 m-0" style={{ color: 'var(--text-4)' }}>
+                  {totalMetrics} metrics across {Object.keys(categorized).length} categories
                 </p>
               </div>
-              <div className="relative w-full md:w-72 mt-4 md:mt-0">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <SearchOutlined className="text-gray-400" />
-                </div>
+              {/* Search */}
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--text-4)' }}>
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
                 <input
+                  ref={searchRef}
                   type="text"
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm"
-                  placeholder="Search 25+ metrics..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search metrics… ⌘K"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-8 pr-4 py-2 rounded-lg text-[13px] outline-none transition-colors w-64"
+                  style={{ background: 'var(--bg-subtle)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 />
               </div>
             </div>
 
-            {Object.keys(filteredCategories).length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-300">
-                <p className="text-gray-500 text-lg">No metrics found matching "{searchQuery}"</p>
+            {Object.keys(filtered).length === 0 ? (
+              <div className="text-center py-20 rounded-xl" style={{ border: '1px dashed var(--border)', color: 'var(--text-4)' }}>
+                No metrics match "<span style={{ color: 'var(--text-2)' }}>{search}</span>"
               </div>
             ) : (
-              <div className="space-y-12">
-                {Object.entries(filteredCategories).map(([category, metrics]) => (
-                  <div key={category} id={`category-${category.toLowerCase().replace(/[^a-z0-9]/g, '-')}`} className="scroll-mt-10">
-                    <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                      <span className="w-1.5 h-6 bg-blue-500 rounded-r-md mr-3"></span>
-                      {category}
-                    </h3>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-10">
+                {Object.entries(filtered).map(([category, metrics]) => (
+                  <div key={category} id={`cat-${category.toLowerCase().replace(/[^a-z0-9]/g, '-')}`} className="scroll-mt-20">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-1 h-5 rounded-full" style={{ background: 'var(--blue)' }} />
+                      <h3 className="text-[15px] font-semibold m-0" style={{ color: 'var(--text)' }}>{category}</h3>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--bg-muted)', color: 'var(--text-4)' }}>{metrics.length}</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {metrics.map(metric => (
-                        <div key={metric.id} id={`metric-${metric.id}`} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col scroll-mt-24 transition duration-200 hover:shadow-md hover:border-blue-300">
-                          <h4 className="text-lg font-bold text-gray-900 mb-2">{metric.name}</h4>
-                          <p className="text-sm text-gray-600 mb-4 flex-grow">{metric.description}</p>
-                          <div className="mt-auto">
-                            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1 block">Native Formula Export</span>
-                            <div className="bg-gray-900 text-green-400 px-4 py-3 rounded text-sm font-mono overflow-x-auto whitespace-nowrap shadow-inner">
-                              {metric.formula}
-                            </div>
+                        <div
+                          key={metric.id}
+                          id={`metric-${metric.id}`}
+                          className="rounded-xl p-5 scroll-mt-24 transition-shadow hover:shadow-sm"
+                          style={{ border: '1px solid var(--border)', background: 'var(--bg-subtle)' }}
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <h4 className="text-[14px] font-semibold m-0" style={{ color: 'var(--text)' }}>{metric.name}</h4>
+                            <a
+                              href={`/finance-calculator/metrics/${metric.id}`}
+                              className="shrink-0 text-[11px] no-underline px-2 py-0.5 rounded transition-colors"
+                              style={{ background: 'var(--blue-bg)', color: 'var(--blue)', border: '1px solid var(--blue-border)' }}
+                            >
+                              Playground →
+                            </a>
+                          </div>
+                          <p className="text-[13px] leading-snug mb-3 m-0" style={{ color: 'var(--text-3)' }}>{metric.description}</p>
+                          <div className="rounded-lg px-3 py-2 font-mono text-[12px] overflow-x-auto" style={{ background: 'var(--bg-muted)', color: 'var(--green)' }}>
+                            {metric.formula}
                           </div>
                         </div>
                       ))}
@@ -314,6 +537,8 @@ const ApiDocs: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
-export default ApiDocs;
+function Divider() {
+  return <hr className="my-0" style={{ borderColor: 'var(--border-subtle)', borderTopWidth: 1 }} />;
+}

@@ -10,24 +10,62 @@
     "url": "https://github.com/boffincoders/finance-calculator/issues"
   },
   "homepage": "https://boffincoders.github.io/finance-calculator/",
-  "description": "A zero-dependency financial engine transforming raw snapshot and timeseries data into precise valuation, profitability, liquidity, and risk metrics.",
+  "description": "Zero-dependency financial analysis engine for JavaScript/TypeScript. Calculates 30+ metrics: P/E, P/B, EV/EBITDA, ROE, Altman Z-Score, Piotroski F-Score, DCF, Graham Number, Sharpe Ratio and more. Works with yahoo-finance2 and any data source.",
   "keywords": [
     "finance",
+    "financial-ratios",
+    "financial-analysis",
+    "financial-calculator",
+    "financial-metrics",
     "valuation",
-    "stock-analysis",
     "fundamental-analysis",
-    "ratios",
-    "dcf",
+    "stock-analysis",
+    "stock-screener",
+    "investment-analysis",
+    "equity-analysis",
     "pe-ratio",
-    "financial-metrics"
+    "price-to-earnings",
+    "price-to-book",
+    "price-to-sales",
+    "ev-ebitda",
+    "enterprise-value",
+    "dcf",
+    "discounted-cash-flow",
+    "graham-number",
+    "altman-z-score",
+    "piotroski",
+    "piotroski-f-score",
+    "sharpe-ratio",
+    "roa",
+    "roe",
+    "roic",
+    "profit-margin",
+    "liquidity-ratio",
+    "debt-to-equity",
+    "solvency",
+    "portfolio-analysis",
+    "typescript",
+    "zero-dependency"
   ],
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^1.6.1"
   }
 }
