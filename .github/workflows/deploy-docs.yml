@@ -29,8 +29,16 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
-          cache-dependency-path: docs/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            docs/package-lock.json
           
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Build library
+        run: npm run build
+
       - name: Install dependencies
         working-directory: docs
         run: npm ci
