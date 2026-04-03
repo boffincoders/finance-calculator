@@ -45,3 +45,25 @@ export const cagr = (beginningValue: number, endingValue: number, periods: numbe
   if (periods <= 0 || beginningValue <= 0 || endingValue < 0) return null;
   return Math.pow(endingValue / beginningValue, 1 / periods) - 1;
 };
+
+/**
+ * Median Growth Rate
+ * Calculates the YoY growth rates for a series of annual values (oldest first),
+ * then returns the median of those rates.
+ * Interpretation:
+ * - More robust than mean growth because it is not skewed by outlier years.
+ * - Useful for evaluating the "typical" annual growth of earnings, revenue, etc.
+ * Returns null if fewer than 2 data points are provided.
+ */
+export const medianGrowth = (annualValues: number[]): number | null => {
+  if (!annualValues || annualValues.length < 2) return null;
+
+  const rates = yoyGrowth(annualValues).filter(r => isFinite(r));
+  if (rates.length === 0) return null;
+
+  const sorted = [...rates].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
+};

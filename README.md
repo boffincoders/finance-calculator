@@ -11,7 +11,7 @@
 ![finance-calculator-pro banner](https://raw.githubusercontent.com/boffincoders/finance-calculator/refs/heads/master/.github/assets/finance-calculator-pro.png)
 
 > **Zero-dependency financial analysis engine for JavaScript and TypeScript.**
-> Calculate 30+ fundamental analysis metrics — valuation ratios, profitability metrics, liquidity ratios, solvency indicators, efficiency metrics, earnings quality signals, and bankruptcy risk scores — from raw financial data. No API calls. No heavy dependencies. Works in Node.js, browsers, and edge runtimes.
+> Calculate 60+ financial metrics — valuation ratios, profitability, liquidity, solvency, efficiency, intrinsic value, composite scoring, technical indicators (SMA, EMA, RSI, MACD, ATR, ADX, Bollinger Bands), and bankruptcy risk scores — from raw financial data. No API calls. No runtime dependencies. Works in Node.js, browsers, and edge runtimes.
 
 ---
 
@@ -50,7 +50,7 @@ Building a stock screener, neo-bank, or internal financial analysis tool? [Let's
 
 ---
 
-## Metrics Reference — 30+ Fundamental Analysis Metrics
+## Metrics Reference — 60+ Functions Across 12 Categories
 
 ### Valuation Ratios
 | Metric | Function | Formula |
@@ -67,6 +67,7 @@ Building a stock screener, neo-bank, or internal financial analysis tool? [Let's
 | Dividend Yield | `dividendYield()` | `Annual Dividend / Price` |
 | Discounted Cash Flow (DCF) | `calculateDCF()` | Terminal value + discounted FCF streams |
 | Graham Number | `grahamNumber()` | `√(22.5 × EPS × Book Value)` |
+| Market Cap to Total Capital | `marketCapToDebtCap()` | `Market Cap / (Market Cap + Total Debt)` |
 
 ### Profitability Metrics
 | Metric | Function | Formula |
@@ -101,6 +102,9 @@ Building a stock screener, neo-bank, or internal financial analysis tool? [Let's
 | Inventory Turnover | `inventoryTurnover()` | `COGS / Average Inventory` |
 | Receivables Turnover | `receivablesTurnover()` | `Revenue / Trade Receivables` |
 | Days Sales Outstanding (DSO) | `daysSalesOutstanding()` | `365 / Receivables Turnover` |
+| Payable Days (DPO) | `payableDays()` | `(Trade Payables / COGS) × 365` |
+| Working Capital Days | `workingCapitalDays()` | `(Working Capital / Revenue) × 365` |
+| Cash Conversion Cycle | `cashConversionCycle()` | `DSO + DIO − DPO` |
 
 ### Earnings Quality Metrics
 | Metric | Function | Formula |
@@ -116,11 +120,51 @@ Building a stock screener, neo-bank, or internal financial analysis tool? [Let's
 | Sharpe Ratio | `sharpe()` | Risk-adjusted return vs risk-free rate |
 | Target Upside | `targetUpside()` | % gap to analyst target price |
 
+### Intrinsic Valuation & Scoring
+| Metric | Function | Notes |
+|---|---|---|
+| Graham Number | `grahamNumber()` | Benjamin Graham's defensive value ceiling |
+| Net Current Value Per Share | `computeNCVPS()` | (Current Assets − Total Liabilities) / Shares |
+| Intrinsic Value Estimate | `computeIntrinsicValue()` | Simple 5-yr EPS projection with margin of safety |
+| G-Factor (Composite) | `computeGFactor()` | Quality×40% + Growth×35% + Momentum×25% |
+| Quality Score | `computeQualityScore()` | Piotroski + ROE vs sector + margins + pledge + promoter |
+| Growth Score | `computeGrowthScore()` | Revenue growth + profit growth + EPS growth + CFO |
+| Value Score | `computeValueScore()` | P/E vs avg + P/B vs sector + PEG + historical percentile |
+| Momentum Score | `computeMomentumScore()` | SMA200 + RSI + ADX + volume ratio + ROC-125 |
+
 ### Growth & Timeseries Analysis
-- **YoY Growth** — Year-over-year revenue, net income, EPS growth rates
-- **QoQ Growth** — Quarter-over-quarter sequential growth
-- **CAGR** — Compound Annual Growth Rate over any period
-- **Fundamental Trends** — Multi-period margin trends, FCF conversion tracking
+| Function | Description |
+|---|---|
+| `calculateGrowthRate()` | Single-period % growth rate |
+| `yoyGrowth()` | Year-over-year growth rates for a series |
+| `qoqGrowth()` | Quarter-over-quarter growth rates |
+| `cagr()` | Compound Annual Growth Rate |
+| `medianGrowth()` | Median YoY growth rate (outlier-resistant) |
+
+### TTM & Historical Aggregation
+| Function | Description |
+|---|---|
+| `computeTTM()` | Trailing Twelve Months sum (last 4 quarters) |
+| `computeTTMAvg()` | Trailing Twelve Months average |
+| `computeNYearAverage()` | Rolling N-year average of quarterly data |
+| `computeNYearSum()` | Rolling N-year sum of quarterly data |
+| `computeHistoricalPoint()` | Value at exactly N quarters back |
+
+### Technical Indicators *(native — zero dependencies)*
+| Function | Description |
+|---|---|
+| `sma(prices, period)` | Simple Moving Average |
+| `ema(prices, period)` | Exponential Moving Average |
+| `rsi(prices, period?)` | Relative Strength Index (default 14) |
+| `roc(prices, period?)` | Rate of Change (default 14) |
+| `macd(prices, fast?, slow?, signal?)` | MACD line, signal line, histogram |
+| `atr(highs, lows, closes, period?)` | Average True Range (default 14) |
+| `bollingerBands(prices, period?, mult?)` | Upper, Middle, Lower bands + Bandwidth |
+| `adx(highs, lows, closes, period?)` | ADX + +DI + −DI (default 14) |
+| `mfi(highs, lows, closes, volumes, period?)` | Money Flow Index (default 14) |
+| `vwap(highs, lows, closes, volumes)` | Volume-Weighted Average Price |
+| `beta(stockReturns, benchmarkReturns)` | Beta vs benchmark |
+| `pivotPoints(high, low, close)` | Classic Pivot Points (P, R1–R3, S1–S3) |
 
 ---
 

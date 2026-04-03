@@ -1,12 +1,16 @@
 import {
   pe, pb, ps, peg, evEbitda, dividendYield, calculateDCF, grahamNumber,
-  priceToCashFlow, earningsYield, evRevenue, evFcf,
+  priceToCashFlow, earningsYield, evRevenue, evFcf, marketCapToDebtCap,
   roa, roe, roic, grossMargin, operatingMargin, netProfitMargin, fcfMargin,
   currentRatio, quickRatio, debtToEquity, interestCoverage,
   netDebt, netDebtToEbitda, debtToAssets,
   assetTurnover, inventoryTurnover, receivablesTurnover, daysSalesOutstanding,
+  payableDays, workingCapitalDays, cashConversionCycle,
   payoutRatio, cashConversionRatio,
   altmanZScore, sharpe, targetUpside, piotroski,
+  computeNCVPS, computeGFactor, computeIntrinsicValue,
+  computeQualityScore, computeGrowthScore, computeValueScore, computeMomentumScore,
+  medianGrowth, cagr,
   evaluate
 } from 'finance-calculator-pro';
 
@@ -500,5 +504,139 @@ export const metricsData: Record<string, MetricDefinition> = {
     ],
     calculate: (inputs) => targetUpside(inputs.currentPrice, inputs.targetPrice),
     evaluateInsight: evaluate.targetUpside
-  }
+  },
+
+  // --- EFFICIENCY (new) ---
+  'payable-days': {
+    id: 'payable-days', name: 'Payable Days (DPO)', category: 'Efficiency',
+    description: 'Average number of days a company takes to pay its suppliers. High DPO can indicate strong bargaining power; excessively high values may signal strained supplier relationships.',
+    history: 'Days Payable Outstanding is a key component of the Cash Conversion Cycle. Together with DSO and DIO, it reveals the full cash flow timing of a business.',
+    formula: 'DPO = (Trade Payables / COGS) × 365',
+    benchmark: '30–60 days is typical for most industries. Retail giants (Walmart, Amazon) often exceed 90 days, using supplier credit as an interest-free source of funding.',
+    inputs: [
+      { key: 'tradePayables', label: 'Trade Payables', min: 0, max: 500000, step: 1000, default: 15000, prefix: '$' },
+      { key: 'cogs', label: 'Cost of Goods Sold (COGS)', min: 1000, max: 1000000, step: 1000, default: 120000, prefix: '$' },
+    ],
+    calculate: (inputs) => payableDays(inputs.tradePayables, inputs.cogs),
+    evaluateInsight: (val) => ({ value: val, status: 'Neutral', insight: 'Higher DPO means the company retains cash longer before paying suppliers. Compare within the same industry.' }),
+  },
+  'working-capital-days': {
+    id: 'working-capital-days', name: 'Working Capital Days', category: 'Efficiency',
+    description: 'Measures how many days of revenue are tied up in net working capital. Lower is better — capital locked in operations generates no returns.',
+    history: 'A composite measure of operating cycle efficiency used by CFOs and working capital analysts to benchmark against peers and track improvement over quarters.',
+    formula: 'WC Days = (Working Capital / Revenue) × 365',
+    inputs: [
+      { key: 'workingCapital', label: 'Working Capital (CA − CL)', min: -50000, max: 200000, step: 1000, default: 20000, prefix: '$' },
+      { key: 'revenue', label: 'Total Revenue', min: 1000, max: 1000000, step: 1000, default: 200000, prefix: '$' },
+    ],
+    calculate: (inputs) => workingCapitalDays(inputs.workingCapital, inputs.revenue),
+    evaluateInsight: (val) => ({ value: val, status: val !== null && val < 30 ? 'Good' : 'Neutral', insight: 'Lower working capital days = faster conversion of operations into cash. Negative values mean suppliers effectively finance operations.' }),
+  },
+  'cash-conversion-cycle': {
+    id: 'cash-conversion-cycle', name: 'Cash Conversion Cycle (CCC)', category: 'Efficiency',
+    description: 'The number of days it takes to convert investments in inventory and other resources into cash flows from sales.',
+    history: 'The CCC is the definitive integrated efficiency metric, combining receivables, inventory, and payables management into a single cash timing view. Negative CCC (like Amazon and Zara) means the business collects cash before paying suppliers — a massive competitive advantage.',
+    formula: 'CCC = Debtor Days + Inventory Days − Payable Days',
+    benchmark: 'Negative CCC = exceptional (collect before you pay). 0–30 days = very efficient. 30–60 days = average. > 60 days = capital-intensive or inefficient. Most retailers and e-commerce businesses aim for negative CCC.',
+    inputs: [
+      { key: 'debtorDays', label: 'Debtor Days (DSO)', min: 0, max: 180, step: 1, default: 45 },
+      { key: 'inventoryDays', label: 'Inventory Days (DIO)', min: 0, max: 365, step: 1, default: 60 },
+      { key: 'payableDays', label: 'Payable Days (DPO)', min: 0, max: 180, step: 1, default: 30 },
+    ],
+    calculate: (inputs) => cashConversionCycle(inputs.debtorDays, inputs.inventoryDays, inputs.payableDays),
+    evaluateInsight: (val) => ({
+      value: val,
+      status: val < 0 ? 'Good' : val <= 45 ? 'Neutral' : 'Bad',
+      insight: val < 0
+        ? 'Negative CCC — suppliers are funding operations. A strong structural advantage.'
+        : `${val} days of working capital tied up in operations. Lower is better.`,
+    }),
+  },
+
+  // --- VALUATION (new) ---
+  'market-cap-to-debt-cap': {
+    id: 'market-cap-to-debt-cap', name: 'Market Cap to Total Capital', category: 'Valuation',
+    description: 'The proportion of total capital (equity + debt) represented by market cap. A higher ratio means the company is predominantly equity-financed — lower financial risk.',
+    history: 'Also known as the equity-to-total-capital ratio, this metric appears in Modigliani-Miller capital structure theory and is widely used in credit analysis to assess leverage.',
+    formula: 'MC / (MC + Total Debt)',
+    benchmark: '> 0.7 = predominantly equity-financed (low leverage) · 0.4–0.7 = balanced capital structure · < 0.4 = heavily debt-financed (higher financial risk).',
+    inputs: [
+      { key: 'marketCap', label: 'Market Cap', min: 1000, max: 5000000, step: 1000, default: 150000, prefix: '$' },
+      { key: 'totalDebt', label: 'Total Debt', min: 0, max: 1000000, step: 1000, default: 30000, prefix: '$' },
+    ],
+    calculate: (inputs) => marketCapToDebtCap(inputs.marketCap, inputs.totalDebt),
+    evaluateInsight: (val) => ({
+      value: val,
+      status: val !== null && val > 0.6 ? 'Good' : val !== null && val > 0.35 ? 'Neutral' : 'Bad',
+      insight: val !== null
+        ? `${(val * 100).toFixed(1)}% equity-financed. ${val > 0.6 ? 'Low leverage.' : val > 0.35 ? 'Moderate leverage.' : 'High debt in capital structure.'}`
+        : 'N/A',
+    }),
+  },
+
+  // --- INTRINSIC ---
+  'ncvps': {
+    id: 'ncvps', name: 'Net Current Value Per Share (NCVPS)', category: 'Valuation',
+    description: 'A conservative liquidation-based valuation — net of all liabilities from current assets, divided by shares. If NCVPS > market price, the stock trades below liquidation value.',
+    history: 'Inspired by Benjamin Graham\'s "net-net" criterion: buy stocks trading below net current asset value (NCAV). Graham considered this the most reliable margin of safety. Warren Buffett used this extensively in the 1950s.',
+    formula: '(Current Assets − Total Liabilities) / Shares Outstanding',
+    benchmark: 'If NCVPS > Market Price, the stock trades below Ben Graham\'s net-net threshold — historically a deep value signal. These opportunities are rare in large caps but occasionally appear in small/micro caps.',
+    inputs: [
+      { key: 'currentAssets', label: 'Current Assets', min: 0, max: 500000, step: 1000, default: 80000, prefix: '$' },
+      { key: 'totalLiabilities', label: 'Total Liabilities', min: 0, max: 500000, step: 1000, default: 50000, prefix: '$' },
+      { key: 'sharesOutstanding', label: 'Shares Outstanding (000s)', min: 1, max: 10000, step: 10, default: 1000 },
+    ],
+    calculate: (inputs) => computeNCVPS(inputs.currentAssets, inputs.totalLiabilities, inputs.sharesOutstanding),
+    evaluateInsight: (val) => ({ value: val, status: val !== null && val > 0 ? 'Good' : 'Bad', insight: val !== null && val > 0 ? 'Positive net current value per share — current assets exceed all liabilities.' : 'Liabilities exceed current assets — no net current value.' }),
+  },
+  'intrinsic-value': {
+    id: 'intrinsic-value', name: 'Intrinsic Value Estimate', category: 'Valuation',
+    description: 'A simplified 5-year EPS projection discounted to present value with a margin of safety applied. Quick-screen approximation — not a full DCF.',
+    history: 'Derived from the principle of discounting future earnings, popularised by Benjamin Graham and refined by Warren Buffett. Margin of safety (Graham\'s key concept) is baked in to protect against forecasting error.',
+    formula: 'IV = (EPS × (1 + g)^5) / (1 − safety)',
+    benchmark: 'If current price < Intrinsic Value, the stock has a margin of safety. Use a 25–35% safety margin for conservative estimates. The result is sensitive to growth rate assumptions — stress-test with pessimistic inputs.',
+    inputs: [
+      { key: 'eps', label: 'EPS (TTM)', min: 0.01, max: 500, step: 0.1, default: 10, prefix: '$' },
+      { key: 'growthRate', label: 'Expected Growth Rate (5yr)', min: 0, max: 0.5, step: 0.01, default: 0.12 },
+      { key: 'safetyMargin', label: 'Margin of Safety', min: 0, max: 0.5, step: 0.05, default: 0.25 },
+    ],
+    calculate: (inputs) => computeIntrinsicValue(inputs.eps, inputs.growthRate, inputs.safetyMargin),
+    evaluateInsight: (val) => ({ value: val, status: 'Neutral', insight: 'Compare against current market price. Price < Intrinsic Value = margin of safety exists.' }),
+  },
+  'g-factor': {
+    id: 'g-factor', name: 'G-Factor (Composite Score)', category: 'Risk',
+    description: 'Weighted composite of Quality (40%), Growth (35%), and Momentum (25%) scores — each 0–100. The G-Factor summarises a stock\'s overall quantitative attractiveness.',
+    history: 'Based on multi-factor quantitative equity models. Quality, growth, and momentum factors have independently been shown to deliver excess risk-adjusted returns in academic literature (Fama-French, Asness et al.).',
+    formula: 'G = Quality×0.40 + Growth×0.35 + Momentum×0.25',
+    benchmark: '> 70 = strong composite fundamentals · 40–70 = average · < 40 = weak. Use with computeQualityScore, computeGrowthScore, and computeMomentumScore from this library.',
+    inputs: [
+      { key: 'qualityScore', label: 'Quality Score (0–100)', min: 0, max: 100, step: 1, default: 70 },
+      { key: 'growthScore', label: 'Growth Score (0–100)', min: 0, max: 100, step: 1, default: 65 },
+      { key: 'momentumScore', label: 'Momentum Score (0–100)', min: 0, max: 100, step: 1, default: 55 },
+    ],
+    calculate: (inputs) => computeGFactor(inputs.qualityScore, inputs.growthScore, inputs.momentumScore),
+    evaluateInsight: (val) => ({
+      value: val,
+      status: val > 70 ? 'Good' : val > 40 ? 'Neutral' : 'Bad',
+      insight: val > 70 ? 'Strong composite fundamentals across quality, growth, and momentum.' : val > 40 ? 'Average composite score — mixed signals.' : 'Weak across quality, growth, and/or momentum factors.',
+    }),
+  },
+  'cagr': {
+    id: 'cagr', name: 'CAGR', category: 'Growth',
+    description: 'Compound Annual Growth Rate — the geometric mean annual growth rate of an investment over a multi-year period.',
+    history: 'CAGR is the standard for comparing investment or business performance across different time horizons. It eliminates the distortion of volatility in year-by-year returns and expresses performance as a single smooth annual rate.',
+    formula: '(Ending Value / Beginning Value)^(1/n) − 1',
+    benchmark: 'For revenue/earnings: > 20% is exceptional · 10–20% is strong · < 10% is modest. Compare against sector growth rates and index returns for context.',
+    inputs: [
+      { key: 'beginningValue', label: 'Beginning Value', min: 1, max: 1000000, step: 100, default: 1000, prefix: '$' },
+      { key: 'endingValue', label: 'Ending Value', min: 1, max: 1000000, step: 100, default: 2000, prefix: '$' },
+      { key: 'periods', label: 'Number of Years', min: 1, max: 30, step: 1, default: 5 },
+    ],
+    calculate: (inputs) => cagr(inputs.beginningValue, inputs.endingValue, inputs.periods),
+    evaluateInsight: (val) => ({
+      value: val,
+      status: val !== null && val > 0.2 ? 'Good' : val !== null && val > 0.08 ? 'Neutral' : 'Bad',
+      insight: val !== null ? `${(val * 100).toFixed(1)}% annual growth rate compounded over the period.` : 'N/A',
+    }),
+  },
 };
