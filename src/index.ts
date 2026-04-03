@@ -71,5 +71,4 @@ export * from "./historical/index";
 // Composite Scoring Engine
 export * from "./scoring/index";
 
-// Technical Indicators
-export * from "./technicals/index";
+

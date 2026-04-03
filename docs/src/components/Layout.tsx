@@ -18,6 +18,9 @@ const CATEGORIES = [
       { id: 'dcf', label: 'Discounted Cash Flow' },
       { id: 'graham', label: 'Graham Number' },
       { id: 'dividend', label: 'Dividend Yield' },
+      { id: 'market-cap-to-debt-cap', label: 'Market Cap to Total Capital' },
+      { id: 'ncvps', label: 'Net Current Value Per Share' },
+      { id: 'intrinsic-value', label: 'Intrinsic Value Estimate' },
     ],
   },
   {
@@ -56,6 +59,9 @@ const CATEGORIES = [
       { id: 'inventory-turnover', label: 'Inventory Turnover' },
       { id: 'receivables-turnover', label: 'Receivables Turnover' },
       { id: 'days-sales-outstanding', label: 'Days Sales Outstanding' },
+      { id: 'payable-days', label: 'Payable Days (DPO)' },
+      { id: 'working-capital-days', label: 'Working Capital Days' },
+      { id: 'cash-conversion-cycle', label: 'Cash Conversion Cycle' },
     ],
   },
   {
@@ -72,6 +78,38 @@ const CATEGORIES = [
       { id: 'sharpe', label: 'Sharpe Ratio' },
       { id: 'piotroski', label: 'Piotroski F-Score' },
       { id: 'target-upside', label: 'Target Upside' },
+      { id: 'g-factor', label: 'G-Factor (Composite)' },
+    ],
+  },
+  {
+    label: 'Growth',
+    items: [
+      { id: 'cagr', label: 'CAGR' },
+      { id: 'median-growth', label: 'Median Growth Rate' },
+    ],
+  },
+  {
+    label: 'TTM',
+    items: [
+      { id: 'ttm-sum', label: 'TTM Sum' },
+      { id: 'ttm-avg', label: 'TTM Average' },
+    ],
+  },
+  {
+    label: 'Historical',
+    items: [
+      { id: 'n-year-avg', label: 'N-Year Average' },
+      { id: 'n-year-sum', label: 'N-Year Sum' },
+      { id: 'historical-point', label: 'Historical Point Lookup' },
+    ],
+  },
+  {
+    label: 'Scoring',
+    items: [
+      { id: 'quality-score', label: 'Quality Score' },
+      { id: 'growth-score', label: 'Growth Score' },
+      { id: 'value-score', label: 'Value Score' },
+      { id: 'momentum-score', label: 'Momentum Score' },
     ],
   },
 ];

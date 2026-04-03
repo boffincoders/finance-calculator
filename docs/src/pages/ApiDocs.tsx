@@ -232,22 +232,33 @@ const SINGLE_CODE = `import {
   currentRatio, quickRatio, debtToEquity,
   netDebt, netDebtToEbitda, debtToAssets,
   assetTurnover, receivablesTurnover, daysSalesOutstanding,
+  payableDays, workingCapitalDays, cashConversionCycle,
   payoutRatio, cashConversionRatio,
   altmanZScore, piotroski, sharpe,
   grahamNumber, calculateDCF,
+  computeNCVPS, computeIntrinsicValue, computeGFactor,
   evaluate,
 } from 'finance-calculator-pro';
 
-// Every function returns number | null — null on divide-by-zero
-pe(150, 5);                              // → 30
-priceToCashFlow(150_000, 7_000);         // → 21.43
-earningsYield(5, 150);                   // → 0.0333
+// Valuation & Profitability
+pe(150, 5);                                    // → 30
+priceToCashFlow(150_000, 7_000);               // → 21.43
+earningsYield(5, 150);                         // → 0.0333
 
-netDebtToEbitda(20_000, 5_000, 10_000); // → 1.5
-daysSalesOutstanding(50_000, 6_250);     // → 45.6 days
-cashConversionRatio(7_000, 5_000);       // → 1.4
+// Solvency & Efficiency
+netDebtToEbitda(20_000, 5_000, 10_000);       // → 1.5
+daysSalesOutstanding(50_000, 6_250);           // → 45.6 days
+cashConversionCycle(46, 60, 30);              // → 76 days
+payableDays(15_000, 120_000);                 // → 45.6 days
+workingCapitalDays(20_000, 200_000);          // → 36.5 days
 
-grahamNumber(5, 20);                     // → 47.43  (null if EPS/book ≤ 0)
+// Intrinsic Valuation
+grahamNumber(5, 20);                          // → 47.43
+computeNCVPS(80_000, 50_000, 1_000);          // → 30
+computeIntrinsicValue(10, 0.12, 0.25);        // → 14.09
+computeGFactor(70, 65, 55);                   // → 64.25
+
+// Risk
 altmanZScore(15_000, 20_000, 7_500, 250_000, 50_000, 100_000, 60_000); // → 3.71
 
 const result = piotroski({
@@ -258,7 +269,7 @@ result.score;    // → 4
 result.maxScore; // → 5
 
 // Pair raw math with the evaluator
-const ratio = pe(150, 5);            // → 30
+const ratio = pe(150, 5);  // → 30
 evaluate.pe(ratio);
 // { value: 30, status: "Bad", insight: "Expensive. High growth is priced in." }`;
 
@@ -403,7 +414,7 @@ export default function ApiDocs() {
                       { fn: 'analyzeProfitability', note: 'ROA, ROE, ROIC, all margins' },
                       { fn: 'analyzeLiquidity',     note: 'Current, Quick, D/E, Interest Coverage' },
                       { fn: 'analyzeSolvency',      note: 'Net Debt, Net Debt/EBITDA, Debt/Assets' },
-                      { fn: 'analyzeEfficiency',    note: 'Asset Turnover, Inventory, Receivables, DSO' },
+                      { fn: 'analyzeEfficiency',    note: 'Asset Turnover, Inventory, DSO, Payable Days, WC Days, CCC' },
                       { fn: 'analyzeRisk',          note: 'Altman Z, Sharpe, Piotroski F-Score' },
                       { fn: 'analyzeQuality',       note: 'Payout Ratio, CCR, Target Upside' },
                     ].map(({ fn, note }) => (
@@ -461,9 +472,7 @@ export default function ApiDocs() {
             <CodeBlock code={SINGLE_CODE} />
           </section>
 
-          <Divider />
 
-          {/* 7 · Dictionary */}
           <section id="dictionary" className="scroll-mt-20">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-4">
               <div>
