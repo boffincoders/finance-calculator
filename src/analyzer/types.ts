@@ -6,6 +6,7 @@ export interface CompanySnapshotInput {
   operatingIncome?: number;
   netIncome?: number;
   freeCashFlow?: number;
+  operatingCashFlow?: number;    // for P/CF, CCR, Piotroski F2/F4
   eps?: number;
   bookValuePerShare?: number;
   revenuePerShare?: number;
@@ -13,8 +14,10 @@ export interface CompanySnapshotInput {
   totalLiabilities?: number;
   totalEquity?: number;
   totalDebt?: number;
+  longTermDebt?: number;         // for Piotroski F5
   cashAndEquivalents?: number;
   inventory?: number;
+  tradeReceivables?: number;     // for receivables turnover / DSO
   interestExpense?: number;
   costOfRevenue?: number;
   annualDividendPerShare?: number;
@@ -24,8 +27,9 @@ export interface CompanySnapshotInput {
   retainedEarnings?: number;
   ebit?: number;
   taxRate?: number;
-  returns?: number; // for sharpe
-  riskFree?: number; // for sharpe
-  stdDev?: number; // for sharpe
+  sharesOutstanding?: number;    // for P/CF per-share, Piotroski F7
+  returns?: number;              // for sharpe
+  riskFree?: number;             // for sharpe
+  stdDev?: number;               // for sharpe
   analystTargetPrice?: number;
 }

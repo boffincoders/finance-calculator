@@ -6,6 +6,7 @@ export * from "./analyzer/analyzeCompany";
 export * from "./analyzer/categorical";
 export * from "./analyzer/analyzeFundamentalTrends";
 export * from "./evaluator/evaluate";
+export * from "./analyzer/types";
 
 // Valuation
 export * from "./valuation/pe";
@@ -15,6 +16,10 @@ export * from "./valuation/peg";
 export * from "./valuation/evEbitda";
 export * from "./valuation/dividendYield";
 export * from "./valuation/dcf";
+export * from "./valuation/priceToCashFlow";
+export * from "./valuation/earningsYield";
+export * from "./valuation/evRevenue";
+export * from "./valuation/evFcf";
 
 // Profitability
 export * from "./profitability/roe";
@@ -28,13 +33,22 @@ export * from "./liquidity/quickRatio";
 export * from "./liquidity/debtToEquity";
 export * from "./liquidity/interestCoverage";
 
+// Solvency
+export * from "./solvency/netDebt";
+
 // Efficiency
 export * from "./efficiency/assetTurnover";
 export * from "./efficiency/inventoryTurnover";
+export * from "./efficiency/receivablesTurnover";
+
+// Quality
+export * from "./quality/payoutRatio";
+export * from "./quality/cashConversionRatio";
 
 // Risk & Intrinsic
 export * from "./risk/sharpe";
 export * from "./risk/altmanZScore";
+export * from "./risk/piotroski";
 export * from "./intrinsic/graham";
 
 // Growth & Insights
